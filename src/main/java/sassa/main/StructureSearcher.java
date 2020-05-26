@@ -27,6 +27,7 @@ public class StructureSearcher {
 		for (WorldIcon feature : villageFeatures) {
 			if (feature.getName().toUpperCase().equals("PILLAGER OUTPOST")) {
 				pillager_outpost.add(feature);
+//				System.out.println("Found Outpost");
 			}
 		}
 		return pillager_outpost;
@@ -38,6 +39,7 @@ public class StructureSearcher {
 		for (WorldIcon feature : villageFeatures) {
 			if (feature.getName().toUpperCase().equals("VILLAGE")) {
 				village.add(feature);
+//				System.out.println("Found Village");
 			}
 		}
 		return village;
@@ -150,7 +152,28 @@ public class StructureSearcher {
 	public static Type hasStructures(Set<Type> structures, World world, long nwCornerX, long nwCornerY, int distX, int distY) {
 		CoordinatesInWorld coords = coords(nwCornerX, nwCornerY);
 		for (Type type : structures) {
-			if (type.equals(Type.MINESHAFT)) {
+			if (type.equals(Type.VILLAGE)) {
+				List<WorldIcon> village = StructureSearcher.findVillage(
+						world,
+						coords);
+				if (village.size() >= 1 && (nwCornerX + distX) > village.get(0).getCoordinates().getX() && (nwCornerY + distY) > village.get(0).getCoordinates().getY()) {
+					return type;
+				}
+			} else if (type.equals(Type.PILLAGER_OUTPOST)) {
+				List<WorldIcon> pillagerOutpost = StructureSearcher.findPillagerOutpost(
+						world,
+						coords);
+				if (pillagerOutpost.size() >= 1 && (nwCornerX + distX) > pillagerOutpost.get(0).getCoordinates().getX() && (nwCornerY + distY) > pillagerOutpost.get(0).getCoordinates().getY()) {
+					return type;
+				}
+			} else if (type.equals(Type.BURIED_TREASURE)) {
+				List<WorldIcon> buriedTreasure = StructureSearcher.findBuriedTreasure(
+						world,
+						coords);
+				if (buriedTreasure.size() >= 1 && (nwCornerX + distX) > buriedTreasure.get(0).getCoordinates().getX() && (nwCornerY + distY) > buriedTreasure.get(0).getCoordinates().getY()) {
+					return type;
+				}
+			} else if (type.equals(Type.MINESHAFT)) {
 				List<WorldIcon> mineshafts = StructureSearcher.findMineshafts(
 						world,
 						coords);
@@ -185,13 +208,6 @@ public class StructureSearcher {
 				if (shipwreck.size() >= 1 && (nwCornerX + distX) > shipwreck.get(0).getCoordinates().getX() && (nwCornerY + distY) > shipwreck.get(0).getCoordinates().getY()) {
 					return type;
 				}
-			} else if (type.equals(Type.BURIED_TREASURE)) {
-				List<WorldIcon> buriedTreasure = StructureSearcher.findBuriedTreasure(
-						world,
-						coords);
-				if (buriedTreasure.size() >= 1 && (nwCornerX + distX) > buriedTreasure.get(0).getCoordinates().getX() && (nwCornerY + distY) > buriedTreasure.get(0).getCoordinates().getY()) {
-					return type;
-				}
 			} else if (type.equals(Type.MANSION)) {
 				List<WorldIcon> mansion = StructureSearcher.findMansion(
 						world,
@@ -205,20 +221,6 @@ public class StructureSearcher {
 						world,
 						coords);
 				if (stronghold.size() >= 1 && (nwCornerX + distX) > stronghold.get(0).getCoordinates().getX() && (nwCornerY + distY) > stronghold.get(0).getCoordinates().getY()) {
-					return type;
-				}
-			} else if (type.equals(Type.VILLAGE)) {
-				List<WorldIcon> village = StructureSearcher.findVillage(
-						world,
-						coords);
-				if (village.size() >= 1 && (nwCornerX + distX) > village.get(0).getCoordinates().getX() && (nwCornerY + distY) > village.get(0).getCoordinates().getY()) {
-					return type;
-				}
-			} else if (type.equals(Type.PILLAGER_OUTPOST)) {
-				List<WorldIcon> pillagerOutpost = StructureSearcher.findPillagerOutpost(
-						world,
-						coords);
-				if (pillagerOutpost.size() >= 1 && (nwCornerX + distX) > pillagerOutpost.get(0).getCoordinates().getX() && (nwCornerY + distY) > pillagerOutpost.get(0).getCoordinates().getY()) {
 					return type;
 				}
 			} else if (type.equals(Type.DESERT_TEMPLE)) {

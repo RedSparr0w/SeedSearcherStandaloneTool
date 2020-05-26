@@ -27,6 +27,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
+import java.awt.datatransfer.StringSelection;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
 
 /**
  * A service that searches for worlds that match specific criteria.
@@ -129,15 +132,15 @@ public class BiomeSearcher implements Runnable {
 		}
 	}
 
-	int[] getBiomeCodes(long nwCornerX, long nwCornerY, int width, int height) throws MinecraftInterfaceException {
-		return this.mMinecraftInterface.getBiomeData(
-				(int) (Resolution.QUARTER.convertFromWorldToThis(nwCornerX)),
-				(int) (Resolution.QUARTER.convertFromWorldToThis(nwCornerY)),
-				width / 4,
-				height / 4,
-				true // useQuarterResolution
-		);
-	}
+//	int[] getBiomeCodes(long nwCornerX, long nwCornerY, int width, int height) throws MinecraftInterfaceException {
+//		return this.mMinecraftInterface.getBiomeData(
+//				(int) (Resolution.QUARTER.convertFromWorldToThis(nwCornerX)),
+//				(int) (Resolution.QUARTER.convertFromWorldToThis(nwCornerY)),
+//				width / 4,
+//				height / 4,
+//				true // useQuarterResolution
+//		);
+//	}
 
 	/**
 	 * Determines whether to accept a world.
@@ -180,32 +183,21 @@ public class BiomeSearcher implements Runnable {
 		long searchCenterX = searchCenter.getX();
 		long searchCenterY = searchCenter.getY();
 
-		int[] biomeCodes = getBiomeCodes(
-			searchCenterX - this.mSearchQuadrantWidth,
-			searchCenterY - this.mSearchQuadrantHeight,
-			2 * this.mSearchQuadrantWidth,
-			2 * this.mSearchQuadrantHeight);
-		int biomeCodesCount = biomeCodes.length;
+//		int[] biomeCodes = getBiomeCodes(
+//			searchCenterX - this.mSearchQuadrantWidth,
+//			searchCenterY - this.mSearchQuadrantHeight,
+//			2 * this.mSearchQuadrantWidth,
+//			2 * this.mSearchQuadrantHeight);
+//		int biomeCodesCount = biomeCodes.length;
 
-		if (biomes.length == 0 && rejectedBiomes.length == 0 && biomeSets.size() == 0 && rejectedBiomeSets.size() == 0 && structures.length == 0 && rejectedStructures.length == 0) {
+		if (structures.length == 0) {
             util.console("Creating search lists...");
 		}
-
-		biomes = guiCollector.getBiomesFromArrayList(Singleton.getInstance().getBiomesGridPane(),"Include");
-		rejectedBiomes = guiCollector.getBiomesFromArrayList(Singleton.getInstance().getBiomesGridPane(),"Exclude");
-		searchBiomes = guiCollector.checkIfBiomesSelected(biomes, searchBiomes);
-        searchRejectedBiomes = guiCollector.checkIfBiomesSelected(rejectedBiomes, searchRejectedBiomes);
 		structures = guiCollector.getStructuresFromArrayList(Singleton.getInstance().getStructureGridPane(), "Include");
 		searchStructures = guiCollector.checkIfStructuresSelected(structures, searchStructures);
-		rejectedStructures = guiCollector.getStructuresFromArrayList(Singleton.getInstance().getStructureGridPane(), "Exclude");
-		searchRejectedStructures = guiCollector.checkIfStructuresSelected(rejectedStructures, searchRejectedStructures);
-		biomeSets = guiCollector.getBiomesSetsFromHashMap(Singleton.getInstance().getBiomeSetsGridPane(), "Include");
-		searchBiomeSets = guiCollector.checkIfBiomeSetsSelected(biomeSets, searchBiomeSets);
-		rejectedBiomeSets = guiCollector.getBiomesSetsFromHashMap(Singleton.getInstance().getBiomeSetsGridPane(), "Include");
-		searchRejectedBiomesSets = guiCollector.checkIfBiomeSetsSelected(rejectedBiomeSets, searchRejectedBiomesSets);
 
-		if (!searchBiomes && !searchRejectedBiomes && !searchBiomeSets && !searchRejectedBiomesSets && !searchStructures && !searchRejectedStructures) {
-			util.console("\nNo biomes are selected or rejected!\nPlease select Biomes!\nSearch has cancelled.\nRecommend you clear console!\n");
+		if (!searchStructures) {
+			util.console("\nNo structures are selected!\nPlease select Structures!\nSearch has cancelled.\nRecommend you clear console!\n");
 			quitImmediate = true;
 			return false;
 		}
@@ -224,51 +216,51 @@ public class BiomeSearcher implements Runnable {
 			}
 		}
 
-		Set<StructureSearcher.Type> undiscoveredRejectedStructures = new HashSet<>(Arrays.asList(rejectedStructures));
-		for(int i =0; i <= undiscoveredRejectedStructures.size(); i++){
-			StructureSearcher.Type struct = StructureSearcher.hasStructures(
-					undiscoveredRejectedStructures,
-					world,
-					searchCenterX - this.mSearchQuadrantHeight,
-					searchCenterY -  this.mSearchQuadrantWidth,
-					this.mSearchQuadrantHeight * 2,
-					this.mSearchQuadrantWidth * 2);
-			if(undiscoveredRejectedStructures.contains(struct)){
-				return false;
-			}
-		}
+//		Set<StructureSearcher.Type> undiscoveredRejectedStructures = new HashSet<>(Arrays.asList(rejectedStructures));
+//		for(int i =0; i <= undiscoveredRejectedStructures.size(); i++){
+//			StructureSearcher.Type struct = StructureSearcher.hasStructures(
+//					undiscoveredRejectedStructures,
+//					world,
+//					searchCenterX - this.mSearchQuadrantHeight,
+//					searchCenterY -  this.mSearchQuadrantWidth,
+//					this.mSearchQuadrantHeight * 2,
+//					this.mSearchQuadrantWidth * 2);
+//			if(undiscoveredRejectedStructures.contains(struct)){
+//				return false;
+//			}
+//		}
 
 		// Start with a set of all biomes to find.
-		Set<Biome> undiscoveredBiomes = new HashSet<>(Arrays.asList(biomes));
-		Set<Biome> undiscoveredRejectedBiomes = new HashSet<>(Arrays.asList(rejectedBiomes));
-		HashMap<Biome, String> undiscoveredBiomeSets = new HashMap<>(biomeSets);
-		HashMap<Biome, String> undiscoveredRejectedBiomeSets = new HashMap<>(rejectedBiomeSets);
-		for (int biomeCodeIndex = 0; biomeCodeIndex < biomeCodesCount; biomeCodeIndex++) {
-			if (undiscoveredBiomes.remove(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
-				// A new biome has been found.
-				// Determine whether this was the last biome to find.
-			}
-
-			// In theory this should return false if the world contains a specific biome
-			if(undiscoveredRejectedBiomes.remove(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
-				//Works except for ocean. No idea why
-				return false; // Adding this makes excluded biomes not be resulted anymore. DO NOT REMOVE UNLESS YOU HAVE A FIX FOR THIS
-			}
-
-			if (undiscoveredBiomeSets.containsKey(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
-				String setValue = undiscoveredBiomeSets.get(Biome.getByIndex(biomeCodes[biomeCodeIndex]));
-				// Get the iterator over the HashMap
-				undiscoveredBiomeSets.entrySet()
-				.removeIf(
-					entry -> (setValue.equals(entry.getValue())));
-			}
-
-			if (undiscoveredRejectedBiomeSets.containsKey(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
-				return false;
-			}
-		}
-
-		if (undiscoveredBiomes.isEmpty() && undiscoveredBiomeSets.isEmpty() && undiscoveredStructures.isEmpty()) {
+//		Set<Biome> undiscoveredBiomes = new HashSet<>(Arrays.asList(biomes));
+//		Set<Biome> undiscoveredRejectedBiomes = new HashSet<>(Arrays.asList(rejectedBiomes));
+//		HashMap<Biome, String> undiscoveredBiomeSets = new HashMap<>(biomeSets);
+//		HashMap<Biome, String> undiscoveredRejectedBiomeSets = new HashMap<>(rejectedBiomeSets);
+//		for (int biomeCodeIndex = 0; biomeCodeIndex < biomeCodesCount; biomeCodeIndex++) {
+//			if (undiscoveredBiomes.remove(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
+//				// A new biome has been found.
+//				// Determine whether this was the last biome to find.
+//			}
+//
+//			// In theory this should return false if the world contains a specific biome
+//			if(undiscoveredRejectedBiomes.remove(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
+//				//Works except for ocean. No idea why
+//				return false; // Adding this makes excluded biomes not be resulted anymore. DO NOT REMOVE UNLESS YOU HAVE A FIX FOR THIS
+//			}
+//
+//			if (undiscoveredBiomeSets.containsKey(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
+//				String setValue = undiscoveredBiomeSets.get(Biome.getByIndex(biomeCodes[biomeCodeIndex]));
+//				// Get the iterator over the HashMap
+//				undiscoveredBiomeSets.entrySet()
+//				.removeIf(
+//					entry -> (setValue.equals(entry.getValue())));
+//			}
+//
+//			if (undiscoveredRejectedBiomeSets.containsKey(Biome.getByIndex(biomeCodes[biomeCodeIndex]))) {
+//				return false;
+//			}
+//		}
+//
+		if (undiscoveredStructures.isEmpty()) {
 			return true;
 		}
 
@@ -310,8 +302,12 @@ public class BiomeSearcher implements Runnable {
 			// An incomplete line of dots was printed.
 			//Util.console("");
 		}
+		String seedStr = "" + acceptedWorld.getWorldSeed().getLong();
+		StringSelection stringSelection = new StringSelection(seedStr);
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		clipboard.setContents(stringSelection, null);
 		util.console(
-				acceptedWorldsCount + ": " + acceptedWorld.getWorldSeed().getLong() + " (rejected "
+				acceptedWorldsCount + ": " + seedStr + " (rejected "
 						+ rejectedWorldsCount + ")");
 	}
 
@@ -336,6 +332,7 @@ public class BiomeSearcher implements Runnable {
 				try {
 					world = createWorld();
 				} catch (MinecraftInterfaceException e) {
+					System.out.println("Failed to create world");
 					// TODO log
 					rejectedWorldsCount++;
 					totalRejectedSeedCount++;
@@ -346,6 +343,7 @@ public class BiomeSearcher implements Runnable {
 				try {
 					isWorldAccepted = accept(world);
 				} catch (MinecraftInterfaceException | UnknownBiomeIndexException | ParseException e) {
+					System.out.println("Failed to accept/reject world");
 					// Biome data for the world could not be obtained.
 					// Biome data included an unknown biome code.
 					// TODO log
