@@ -39,7 +39,7 @@ public class fxmlController implements Initializable {
     private static long startTime; // TODO use this in the future to tell user when they started
     private static long elapsedTime;
 
-    static Thread t;
+    static Thread t, t2, t3, t4;
     static boolean allowThreadToSearch = true;
     static BiomeSearcher r;
 
@@ -368,6 +368,12 @@ public class fxmlController implements Initializable {
         initTimer();
         t = new Thread(createNewThread());
         t.start();
+        t2 = new Thread(createNewThread());
+        t2.start();
+//        t3 = new Thread(createNewThread());
+//        t3.start();
+//        t4 = new Thread(createNewThread());
+//        t4.start();
     }
 
     public void stop() throws InterruptedException, IOException, FormatException, MinecraftInterfaceCreationException {

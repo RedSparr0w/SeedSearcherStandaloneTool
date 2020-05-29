@@ -15,11 +15,13 @@ import amidst.mojangapi.world.biome.Biome;
 import amidst.mojangapi.world.biome.UnknownBiomeIndexException;
 import amidst.mojangapi.world.coordinates.CoordinatesInWorld;
 import amidst.mojangapi.world.coordinates.Resolution;
+import amidst.mojangapi.world.icon.WorldIcon;
 import amidst.parsing.FormatException;
 import javafx.application.Platform;
 import org.json.simple.parser.ParseException;
 import sassa.gui.guiCollector;
 import sassa.util.Singleton;
+import sassa.util.Stuff;
 import sassa.util.Util;
 
 import java.io.File;
@@ -276,43 +278,6 @@ public class BiomeSearcher implements Runnable {
 	}
 
 	/**
-	 * Updates the progress output for a world that has been rejected.
-	 *
-	 * @param rejectedWorldsCount the number of worlds that have been rejected
-	 *            since the last world was accepted
-	 */
-
-
-
-	static void updateRejectedWorldsProgress(int rejectedWorldsCount) {
-        singleton.getCRejSeed().setText(""+rejectedWorldsCount);
-		singleton.getTRejSeed().setText(""+totalRejectedSeedCount);
-		singleton.getSequenceSeed().setText("" + currentSeedCheck);
-	}
-
-	/**
-	 * Updates the progress output for a world that has been accepted.
-	 *
-	 * @param rejectedWorldsCount the number of worlds that have been rejected
-	 *            since the last world was accepted
-	 * @param acceptedWorldsCount the number of worlds that have been accepted,
-	 *            including the given world
-	 * @param acceptedWorld the world that has been accepted
-	 */
-	static void updateAcceptedWorldsProgress(
-			int rejectedWorldsCount,
-			int acceptedWorldsCount,
-			World acceptedWorld) {
-		if (rejectedWorldsCount / (1 << 4) > 0) {
-			// An incomplete line of dots was printed.
-			//Util.console("");
-		}
-		util.console(
-				acceptedWorldsCount + ": " + acceptedWorld.getWorldSeed().getLong() + " (rejected "
-						+ rejectedWorldsCount + ")");
-	}
-
-	/**
 	 * Searches for matching worlds, and prints the seed of each matching world
 	 * to the given output stream.
 	 *
@@ -321,11 +286,10 @@ public class BiomeSearcher implements Runnable {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	public static int totalRejectedSeedCount = 0;
 	void search() throws InterruptedException, IOException, FormatException, MinecraftInterfaceCreationException, ParseException {
-		int rejectedWorldsCount = 0;
-		int acceptedWorldsCount = 0;
-        totalRejectedSeedCount = 0;
+		int acceptedWorldsCount = Stuff.resetAcceptedCount();
+		Stuff.resetRejectedCount();
+		Stuff.resetTotalRejectedCount();
         singleton.getSequenceSeed().setText("" + 0);
 
 		util.console("Creating search lists...");
@@ -386,9 +350,8 @@ public class BiomeSearcher implements Runnable {
 					world = createWorld();
 				} catch (MinecraftInterfaceException e) {
 					// TODO log
-					rejectedWorldsCount++;
-					totalRejectedSeedCount++;
-					updateRejectedWorldsProgress(rejectedWorldsCount);
+					Stuff.incrementRejectedCount();
+					Stuff.incrementTotalRejectedCount();
 					continue;
 				}
 				boolean isWorldAccepted;
@@ -398,21 +361,18 @@ public class BiomeSearcher implements Runnable {
 					// Biome data for the world could not be obtained.
 					// Biome data included an unknown biome code.
 					// TODO log
-					rejectedWorldsCount++;
-					totalRejectedSeedCount++;
-					updateRejectedWorldsProgress(rejectedWorldsCount);
+					Stuff.incrementRejectedCount();
+					Stuff.incrementTotalRejectedCount();
 					continue;
 				}
 				if (!isWorldAccepted) {
-					rejectedWorldsCount++;
-					totalRejectedSeedCount++;
-					updateRejectedWorldsProgress(rejectedWorldsCount);
+					Stuff.incrementRejectedCount();
+					Stuff.incrementTotalRejectedCount();
 					continue;
 				}
 				System.out.println("Valid Seed: " + world.getWorldSeed().getLong());
-				acceptedWorldsCount++;
-				updateAcceptedWorldsProgress(rejectedWorldsCount, acceptedWorldsCount, world);
-				rejectedWorldsCount = 0;
+				acceptedWorldsCount = Stuff.addAcceptedWorld(world);
+				Stuff.resetRejectedCount();
 			}
 		}
 
